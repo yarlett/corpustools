@@ -1,17 +1,19 @@
 package corpustools
 
+// Suffix struct helps with the constructions of a suffix array for a corpus.
 type Suffix struct {
 	corpus_ptr *[]int
 	corpus_ix  int
 }
 
+// List of suffixes.
 type Suffixes []*Suffix
 
+// Define Len() and Swap() and Less() on elements of Suffixes so that Suffixes can be sorted into order, yielding indices of suffix array.
 func (s Suffixes) Len() int      { return len(s) }
 func (s Suffixes) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
 type BySuffix struct{ Suffixes }
-
 func (s BySuffix) Less(i, j int) bool {
 	corpusi := []int(*s.Suffixes[i].corpus_ptr)
 	ixi := s.Suffixes[i].corpus_ix

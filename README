@@ -1,0 +1,30 @@
+corpustools is a Go library which provides some statistical natural language processing functionality.
+
+Installation instructions
+=========================
+
+1. Install Go on your system.
+2. Download this repository into your $GOPATH.
+3. Type "go install corpustools".
+
+Functionality
+=============
+
+Much of the core functionality of the library is available through the Corpus object.
+
+To create a corpus object from a text file:
+
+	import "corpustools"
+	corpus := corpustools.CorpusFromFile("myfile.txt", true)
+
+which will tokenize myfile.txt into lower-case words, and create a Corpus object from the resulting sequence of words. Each distinct word is assigned a unique integer key so that the corpus can be stored internally as a sequence of integers. When the corpus object is created a suffix array which indexes into the corpus array is automatically created so that statistics can be computed on the corpus in O(log(n)) instead of O(n).
+
+For example, to compute the frequency of a specified sequence:
+
+	f := corpus.Frequency(int[]{1, 2, 3})
+
+To generate the set of all trigrams in the corpus:
+
+	trigrams := corpus.Ngrams(3)
+
+For further examples of uses of the library, look in /examples.
