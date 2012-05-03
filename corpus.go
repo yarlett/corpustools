@@ -13,7 +13,7 @@ type Corpus struct {
 }
 
 func (corpus *Corpus) Info() string {
-	return fmt.Sprintf("%d types and %d tokens in the corpus.\n", len(corpus.voc), len(corpus.seq))
+	return fmt.Sprintf("%d types and %d tokens in the corpus, %d suffixes in the suffix array.\n", len(corpus.voc), len(corpus.seq), len(corpus.sfx))
 }
 
 func (corpus *Corpus) SetSuffixArray() {
@@ -22,92 +22,81 @@ func (corpus *Corpus) SetSuffixArray() {
 	for i, _ := range(corpus.seq) { suffixes = append(suffixes, &Suffix{&corpus.seq, i}) }
 	sort.Sort(BySuffix{suffixes})
 	// Create the array of suffix indexes from the suffix objects.
-	corpus.sfx = make([]int, len(suffixes))
+	corpus.sfx = make([]int, 0)
 	for _, suffix := range(suffixes) {
 		corpus.sfx = append(corpus.sfx, suffix.corpus_ix)
 	}
 }
 
-// Search methods.
+// Suffix array search methods.
 
-func (corpus *Corpus) Search(ngram []int) (slo, shi int) {
-	// // Get first suffix index hit by binary search.
-	// six := corpus.BinarySearch(ngram, 0, len(corpus.sfx) - 1)
-	// if six == -1 { return -1, -1 }
-	// // Perform linear search left and right to get inclusive suffix range.
-	// for slo = six; (slo > 0) && corpus.NgramCmp(slo - 1, ngram) == 0; slo-- {}
-	// for shi = six; (shi < len(corpus.sfx) - 1) && corpus.NgramCmp(shi + 1, ngram) == 0; shi++ {}
-	// return slo, shi
+// Slow linear search over corpus. Only to be used for testing.
+func (corpus *Corpus) SearchSlow(ngram []int) (slo, shi int) {
+	slo = len(corpus.sfx) - 1
+	shi = 0
+	for spos := 0; spos < len(corpus.sfx); spos++ {
+		cmp := corpus.NgramCmp(spos, ngram)
+		if cmp == 0 {
+			if spos < slo { slo = spos }
+			if spos > shi { shi = spos }
+		}
+		if cmp == 1 {
+			break
+		}
+	}
+	return
+}
 
-	slo = corpus.BinarySearchLeft(ngram, 0, len(corpus.sfx) - 1)
-	shi = corpus.BinarySearchRight(ngram, slo, len(corpus.sfx) - 1)
+// Binary search over suffix array to find suffix range corresponding to a specified ngram.
+func (corpus *Corpus) Search(ngram []int) (int, int) {
+	slo, right_bound := corpus.BinarySearchLeftmost(ngram, 0, len(corpus.sfx) - 1)
+	if slo == -1 { return -1, -1 }
+	shi, _ := corpus.BinarySearchRightmost(ngram, slo, right_bound)
 	return slo, shi
 }
 
-func (corpus *Corpus) BinarySearch(ngram []int, smin, smax int) int {
-	var (
-		smid, cmp int
-	)
-	for ; smax >= smin; {
-		smid = (smin + smax) / 2
-		cmp = corpus.NgramCmp(smid, ngram)
-		if cmp == -1 {
-			smin = smid + 1
-		} else if cmp == 1 {
-			smax = smid - 1
-		} else {
-			return smid
-		}
-	}
-	return -1
-}
-
-func (corpus *Corpus) BinarySearchLeft(ngram []int, smin, smax int) int {
-	for ; smax >= smin; {
+// Finds the first suffix pointer to the ngram using deferred detection of equality. Also returns a rightmost bound for the ngram.
+func (corpus *Corpus) BinarySearchLeftmost(ngram []int, smin, smax int) (int, right_bound int) {
+	right_bound = smax
+	for ; smax > smin; {
+		// Compare the ngram found at the search location with the desired ngram. 
 		smid := (smin + smax) / 2
 		cmp := corpus.NgramCmp(smid, ngram)
+		// Update the right bound.
+		if cmp == 1 && smid < right_bound { right_bound = smid }
+		// Update the search.
 		if cmp == -1 {
 			smin = smid + 1
-		} else if cmp == 1 {
-			smax = smid - 1
 		} else {
-			if smid > 0 {
-				cmp_left := corpus.NgramCmp(smid - 1, ngram)
-				if cmp_left != 0 {
-					return smid
-				} else {
-					smax = smid - 1
-				}
-			} else {
-				return smid
-			}
+			smax = smid
 		}
 	}
-	return -1
+	if ((smax == smin) && (corpus.NgramCmp(smin, ngram) == 0)) {
+		return smin, right_bound
+	}
+	return -1, -1
 }
 
-func (corpus *Corpus) BinarySearchRight(ngram []int, smin, smax int) int {
-	for ; smax >= smin; {
-		smid := (smin + smax) / 2
+// Finds the last suffix pointer to the ngram using deferred detection of equality. Also returns a leftmost bound for the ngram.
+func (corpus *Corpus) BinarySearchRightmost(ngram []int, smin, smax int) (int, left_bound int) {
+	left_bound = smin
+	for ; smax > smin; {
+		// Compare the ngram found at the search location with the desired ngram. 
+		smid := ((smin + smax) / 2) + 1
 		cmp := corpus.NgramCmp(smid, ngram)
-		if cmp == -1 {
-			smin = smid + 1
-		} else if cmp == 1 {
+		// Update the right bound.
+		if cmp == -1 && smid > left_bound { left_bound = smid }
+		// Update the search.
+		if cmp == 1 {
 			smax = smid - 1
 		} else {
-			if smid < len(corpus.sfx) - 1 {
-				cmp_right := corpus.NgramCmp(smid + 1, ngram)
-				if cmp_right != 0 {
-					return smid
-				} else {
-					smin = smid + 1
-				}
-			} else {
-				return smid
-			}
+			smin = smid
 		}
 	}
-	return -1
+	if ((smax == smin) && (corpus.NgramCmp(smin, ngram) == 0)) {
+		return smin, left_bound
+	}
+	return -1, -1
 }
 
 func (corpus *Corpus) Ngrams(order int) (ngrams [][]int) {
@@ -115,7 +104,7 @@ func (corpus *Corpus) Ngrams(order int) (ngrams [][]int) {
 	ngrams = append(ngrams, corpus.seq[0:order])
 	for sfx_cur := 0; sfx_cur < len(corpus.sfx); sfx_cur++ {
 		if (corpus.NgramSfxCmp(sfx_lst, sfx_cur, order) != 0) {
-			if corpus.sfx[sfx_cur] + order < len(corpus.seq) {
+			if corpus.sfx[sfx_cur] + order - 1 < len(corpus.seq) {
 				ngrams = append(ngrams, corpus.seq[corpus.sfx[sfx_cur]:corpus.sfx[sfx_cur]+order])
 			}
 			sfx_lst = sfx_cur
@@ -174,7 +163,7 @@ func (corpus *Corpus) ConditionalProbability(ngram1 []int, ngram2 []int) float64
 // Creates and returns a corpus from a text file.
 func CorpusFromFile(filename string, lowerCase bool) (corpus *Corpus) {
 	// Initialize the corpus.
-	corpus = &Corpus{make(map[string]int), make([]int, 0), nil}
+	corpus = &Corpus{voc: make(map[string]int), seq: make([]int, 0), sfx: nil}
 	// Get string array from tokenizer.
 	tokens := TokensFromFile(filename, lowerCase)
 	// Iterate through the string tokens.

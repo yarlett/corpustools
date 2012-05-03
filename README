@@ -1,4 +1,4 @@
-corpustools is a Go library which provides some statistical natural language processing functionality.
+corpustools is a Go library which provides some statistical natural language processing functionality. It is intended to be fairly lightweight, to operate with anything up to medium-sized corpora (hundreds of millions of words), and to be relatively quick. With this in mind many of its operations are based on a suffix array index into corpora.
 
 Installation instructions
 =========================
@@ -27,4 +27,4 @@ To generate the set of all trigrams in the corpus:
 
 	trigrams := corpus.Ngrams(3)
 
-For further examples of uses of the library, look in /examples.
+For further examples of uses of the library see /examples.

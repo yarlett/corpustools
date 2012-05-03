@@ -28,13 +28,13 @@ func (corpus *Corpus) DescriptionLengthDelta(ngram []int) float64 {
 			// Update the encountered elements.
 			P[fmt.Sprintf("%v", p)] += 1
 			S[fmt.Sprintf("%v", s)] += 1
-			// // Add the length of transitions without the ngram in the lexicon.
-			// length_base -= math.Log2(corpus.ConditionalProbability(p, ngram[:1]))
-			// length_base += length_internal
-			// length_base -= math.Log2(corpus.ConditionalProbability(ngram[len(ngram)-1:], s))
-			// // Add the length of transitions with the ngram in the lexicon.
-			// length_with -= math.Log2(corpus.ConditionalProbability(p, ngram))
-			// length_with -= math.Log2(corpus.ConditionalProbability(ngram, s))
+			// Add the length of transitions without the ngram in the lexicon.
+			length_base -= math.Log2(corpus.ConditionalProbability(p, ngram[:1]))
+			length_base += length_internal
+			length_base -= math.Log2(corpus.ConditionalProbability(ngram[len(ngram)-1:], s))
+			// Add the length of transitions with the ngram in the lexicon.
+			length_with -= math.Log2(corpus.ConditionalProbability(p, ngram))
+			length_with -= math.Log2(corpus.ConditionalProbability(ngram, s))
 		}
 	}
 	// Calculate the encoding length of the transitions table.

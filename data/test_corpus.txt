@@ -1,0 +1,1 @@
+this is a very simple corpus provided in order that the corpustools module can be tested. hopefully there are sufficient repetitions of words in this short passage in order to make the ngram patterns somewhat interesting, and in order to tease edge cases out of the various algorithms implemented in the corpustools library. we will see i suppose.
