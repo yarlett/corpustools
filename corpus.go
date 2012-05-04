@@ -107,7 +107,9 @@ func (corpus *Corpus) BinarySearchRightmost(seq []int, smin, smax int) (int, lef
 
 // Returns a copy of the corpus.
 func (corpus *Corpus) Corpus() (seq []int) {
-	for cpos := 0; cpos < len(corpus.seq); cpos++ { seq = append(seq, corpus.seq[cpos]) }
+	for cpos := 0; cpos < len(corpus.seq); cpos++ {
+		seq = append(seq, corpus.seq[cpos])
+	}
 	return
 }
 
