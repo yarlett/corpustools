@@ -21,4 +21,12 @@ func main() {
 	lower_case_tokens := true
 	corpus := corpustools.CorpusFromFile(corpusfile, lower_case_tokens)
 	fmt.Println(corpus.Info())
+
+	// Calculate the mean cross-entropy of the corpus trained on itself
+	corpus_sequence := corpus.Corpus()
+	for predictor_length := 0; predictor_length <= 5; predictor_length++ {
+		probs := corpus.ProbabilityTransitions(corpus_sequence, predictor_length)
+		_, L_mn := corpustools.SummarizeProbabilities(probs)
+		fmt.Printf("The mean cross-entropy of the corpus with itself using length %d predictors is %.2f bits.\n", predictor_length, L_mn)
+	}
 }

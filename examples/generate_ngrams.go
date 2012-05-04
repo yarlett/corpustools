@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 )
 
 func main() {
@@ -21,4 +22,12 @@ func main() {
 	lower_case_tokens := true
 	corpus := corpustools.CorpusFromFile(corpusfile, lower_case_tokens)
 	fmt.Println(corpus.Info())
+
+	// Iterate over various orders and generate the ngrams of this length.
+	for length := 1; length <= 10; length++ {
+		t1 := time.Now()
+		ngrams := corpus.Ngrams(length)
+		t2 := time.Now()
+		fmt.Printf("%d %dgrams found in %v.\n", len(ngrams), length, t2.Sub(t1))
+	}
 }

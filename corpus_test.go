@@ -6,6 +6,7 @@ import (
 	"testing"
 )
 
+// Iterate up to trigrams for test purposes.
 var (
 	MAX_NGRAM_LENGTH int = 3
 )
@@ -20,27 +21,31 @@ func TestBasics(t *testing.T) {
 	if len(corpus.seq) != len(corpus.sfx) {
 		t.Errorf("Corpus sequence and suffix arrays are not the same length (%d vs. %d)!", len(corpus.seq), len(corpus.sfx))
 	}
+	// i + 1th suffix ngram should be >= ith suffix ngram.
+	for spos := 0; spos < len(corpus.sfx)-1; spos++ {
+		if SeqCmp(corpus.sfx[spos], corpus.sfx[spos+1]) == 1 {
+			t.Errorf("Suffix ordering error detected at positions %d and %d!\n", spos, spos+1)
+		}
+	}
 	// Number of unigrams should equal the size of the vocabulary.
 	unigrams := corpus.Ngrams(1)
 	if len(unigrams) != len(corpus.voc) {
-		t.Errorf("Number of unigrams is not equal to the size of the vocabulary (%d vs, %d)!", len(unigrams), len(corpus.voc))
+		t.Errorf("Number of unigrams is not equal to the size of the vocabulary (%d vs. %d)!", len(unigrams), len(corpus.voc))
 	}
 	// Check that suffix indices returned by fast search matches those returned by slow search.
-	for _, unigram := range(unigrams) {
-		slo1, shi1 := corpus.SearchSlow(unigram)
-		slo2, shi2 := corpus.Search(unigram)
-		if (slo1 != slo2) || (shi1 != shi2) {
-			t.Errorf("Error in finding suffix indices! %v: (%d, %d) vs. (%d, %d).\n", unigram, slo1, shi1, slo2, shi2)
+	for _, unigram := range unigrams {
+		slo_slow, shi_slow := corpus.SearchSlow(unigram)
+		slo_fast, shi_fast := corpus.Search(unigram)
+		if (slo_slow != slo_fast) || (shi_slow != shi_fast) {
+			t.Errorf("Error in finding suffix indices! %v: (%d, %d) vs. (%d, %d).\n", unigram, slo_slow, shi_slow, slo_fast, shi_fast)
 		}
 	}
 }
 
-// Test that all suffixes are in order.
-func TestSuffixOrdering(t *testing.T) {
-	for length := 0; length < MAX_NGRAM_LENGTH; length++ {
-		for six := 0; six < len(corpus.sfx) - 1; six++ {
-			if corpus.NgramSfxCmp(six, six + 1, length) == 1 { t.Errorf("Suffix ordering error detected at positions %d and %d!\n", six, six + 1) }
-		}
+// Benchmark for making a corpus from a text file.
+func BenchmarkCorpus(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_ = CorpusFromFile(strings.Join([]string{path, "/data/test_corpus.txt"}, ""), true)
 	}
 }
 
@@ -54,11 +59,11 @@ func BenchmarkNgrams(b *testing.B) {
 }
 
 // Benchmark for generating frequencies of ngrams in the corpus up to a specified length.
-func BenchmarkNgramFreqs(b *testing.B) {
+func BenchmarkFreqs(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		for length := 1; length < MAX_NGRAM_LENGTH; length++ {
 			ngrams := corpus.Ngrams(length)
-			for _, ngram := range(ngrams) {
+			for _, ngram := range ngrams {
 				_ = corpus.Frequency(ngram)
 			}
 		}
