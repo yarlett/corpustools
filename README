@@ -1,4 +1,4 @@
-corpustools is a Go library which provides some statistical natural language processing functionality. It is intended to be fairly lightweight, to operate with anything up to medium-sized corpora (hundreds of millions of words), and to be relatively quick. With this in mind many of its operations are based on a suffix array index into corpora.
+corpustools is a Go library which provides statistical natural language processing functionality on a corpus or words / characters / whatever represented as a sequence of integers. It is intended to be fairly lightweight and fast, and to operate on corpora which can ne held in RAM (of the order of hundreds of millions of tokens). With this in mind many of its operations are based on a suffix array index into corpora.
 
 Installation instructions
 =========================
@@ -7,24 +7,43 @@ Installation instructions
 2. Download this repository into your $GOPATH.
 3. Type "go install corpustools".
 
-Functionality
-=============
+Background
+==========
 
 Much of the core functionality of the library is available through the Corpus object.
 
 To create a corpus object from a text file:
 
 	import "corpustools"
-	corpus := corpustools.CorpusFromFile("myfile.txt", true)
+	lower_case_tokens := true
+	corpus := corpustools.CorpusFromFile("myfile.txt", lower_case_tokens)
 
-which will tokenize myfile.txt into lower-case words, and create a Corpus object from the resulting sequence of words. Each distinct word is assigned a unique integer key so that the corpus can be stored internally as a sequence of integers. When the corpus object is created a suffix array which indexes into the corpus array is automatically created so that statistics can be computed on the corpus in O(log(n)) instead of O(n).
+which will tokenize myfile.txt into lower-case words, assigning each distinct token a unique integer key, and representing the sequence of tokens internally as an array of integers (the Corpus object also encapsulates the mapping from tokens to integers so that the internal representation can be translated back into its original format).
 
-For example, to compute the frequency of a specified sequence:
+When the Corpus object is created, a suffix array for the corpus is also created. The suffix array consists of integer indexes into the corpus such that traversing the suffix array in order and following its pointers results in an ordered enumeration of all substrings of the corpus. For example, here is an example corpus and its corresponding suffix array:
+
+	corpus: [5, 4, 3, 2, 1]
+	suffix: [4, 3, 2, 1, 0]
+
+We can see that suffix[0] points to position 4 in the corpus, which corresponds to the substring [1]. suffix[1] points to position 3 in the corpus, which corresponds to the substring [2, 1] > [1].
+
+Although creating a suffix array doubles the amount of memory required by the Corpus object, it allows much faster searching of the corpus. A naive search algorithm, for example, in order to find the frequency of the substring [1, 2, 3] in the corpus will take O(N) time, whereas a binary search over the suffix array will take only O(log(N)) time.
+
+Usage
+=====
+
+Once a corpus has been created, it is relatively easy to use.
+
+For example, in order to find the locations at which a given sequence is located:
+
+	indices := corpus.Find(int[]{1, 2, 3})
+
+In order to compute the frequency of a specified sequence:
 
 	f := corpus.Frequency(int[]{1, 2, 3})
 
-To generate the set of all trigrams in the corpus:
+And to generate the set of all trigrams in the corpus:
 
 	trigrams := corpus.Ngrams(3)
 
-For further examples of uses of the library see /examples.
+Further and more detailed examples of the functionality provided by the library are included in the /examples folder.

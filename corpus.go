@@ -9,33 +9,61 @@ import (
 type Corpus struct {
 	voc map[string]int // Mapping from input string tokens to unique integers.
 	seq []int          // The raw data of the corpus stored as a sequence of integers.
-	sfx [][]int        // The suffix array, containing of slices of all suffixes of the corpus.
+	sfx []int          // The suffix array, containing of slices of all suffixes of the corpus.
 }
 
 func (corpus *Corpus) Info() string {
 	return fmt.Sprintf("%d types and %d tokens in the corpus, %d suffixes in the suffix array.\n", len(corpus.voc), len(corpus.seq), len(corpus.sfx))
 }
 
-func (corpus *Corpus) SetSuffixArray() {
+func (corpus *Corpus) SuffixArray() (suffix_array []int) {
 	// Create the list of suffixes from the corpus.
 	suffixes := make(Seqs, 0)
 	for cpos, _ := range corpus.seq {
 		suffixes = append(suffixes, corpus.seq[cpos:])
 	}
 	sort.Sort(suffixes)
-	// Assign the sorted suffixes to the corpus.
-	corpus.sfx = make([][]int, 0)
+	// Convert the ordered suffixes back to integer indices into the corpus.
+	// Can derive corpus position from the length of the suffix slice.
 	for _, seq := range suffixes {
-		corpus.sfx = append(corpus.sfx, seq)
+		suffix_array = append(suffix_array, len(corpus.seq)-len(seq))
 	}
+	return
+}
+
+//
+// Find() method returns list of corpus positions at which a sequence is located.
+//
+
+// Returns the corpus indices where a given sequence occurs.
+func (corpus *Corpus) Find(seq []int) (indices []int) {
+	slo, shi := corpus.SuffixSearch(seq)
+	for spos := slo; spos <= shi; spos++ {
+		indices = append(indices, corpus.sfx[spos])
+	}
+	return
+}
+
+//
+// Search methods return the range of suffix positions at which a sequence is located.
+//
+
+// Binary search over suffix array to find suffix range where a sequence is located.
+func (corpus *Corpus) SuffixSearch(seq []int) (int, int) {
+	slo, right_bound := corpus.binarySearchMin(seq, 0, len(corpus.sfx)-1)
+	if slo == -1 {
+		return -1, -1
+	}
+	shi, _ := corpus.binarySearchMax(seq, slo, right_bound)
+	return slo, shi
 }
 
 // Slow linear search over corpus. Only to be used for testing.
-func (corpus *Corpus) SearchSlow(seq []int) (slo, shi int) {
+func (corpus *Corpus) SlowSearch(seq []int) (slo, shi int) {
 	slo = len(corpus.sfx) - 1
 	shi = 0
 	for spos := 0; spos < len(corpus.sfx); spos++ {
-		if (len(corpus.sfx[spos]) >= len(seq)) && (SeqCmp(seq, corpus.sfx[spos][:len(seq)])) == 0 {
+		if SeqCmpLimited(corpus.seq[corpus.sfx[spos]:], seq, len(seq)) == 0 {
 			if spos < slo {
 				slo = spos
 			}
@@ -47,69 +75,55 @@ func (corpus *Corpus) SearchSlow(seq []int) (slo, shi int) {
 	return
 }
 
-// Returns the corpus indices where a given sequence occurs.
-func (corpus *Corpus) Indices(seq []int) (indices []int) {
-	for cpos := 0; cpos < len(corpus.seq) - (len(seq) - 1); cpos++ {
-		if SeqCmpLimited(seq, corpus.seq[cpos:], len(seq)) == 0 {
-			indices = append(indices, cpos)	
-		}
-	}
-	return
-}
+//
+// Utility searching methods (not exported).
+//
 
-// Binary search over suffix array to find suffix range corresponding to a specified ngram.
-func (corpus *Corpus) Search(seq []int) (int, int) {
-	slo, right_bound := corpus.BinarySearchLeftmost(seq, 0, len(corpus.sfx)-1)
-	if slo == -1 {
-		return -1, -1
-	}
-	shi, _ := corpus.BinarySearchRightmost(seq, slo, right_bound)
-	return slo, shi
-}
-
-// Finds the first suffix pointer to the ngram using deferred detection of equality. Also returns a rightmost bound for the ngram.
-func (corpus *Corpus) BinarySearchLeftmost(seq []int, smin, smax int) (int, right_bound int) {
+// Returns the lowest suffix pointer to a sequence using binary search and deferred detection of equality for speed.
+// Also returns a rightmost bound for the sequence which can be used to constrain the maximum search.
+func (corpus *Corpus) binarySearchMin(seq []int, smin, smax int) (int, right_bound int) {
 	right_bound = smax
 	for smax > smin {
 		// Compare the ngram found at the search location with the desired ngram. 
 		smid := (smin + smax) / 2
-		cmp := SeqCmpLimited(corpus.sfx[smid], seq, len(seq))
+		cmp := SeqCmpLimited(corpus.seq[corpus.sfx[smid]:], seq, len(seq))
 		// Update the right bound.
 		if cmp == 1 && smid < right_bound {
 			right_bound = smid
 		}
-		// Update the search.
+		// Update the search range.
 		if cmp == -1 {
 			smin = smid + 1
 		} else {
 			smax = smid
 		}
 	}
-	if (smax == smin) && SeqCmpLimited(seq, corpus.sfx[smin], len(seq)) == 0 {
+	if (smax == smin) && SeqCmpLimited(seq, corpus.seq[corpus.sfx[smin]:], len(seq)) == 0 {
 		return smin, right_bound
 	}
 	return -1, -1
 }
 
-// Finds the last suffix pointer to the ngram using deferred detection of equality. Also returns a leftmost bound for the ngram.
-func (corpus *Corpus) BinarySearchRightmost(seq []int, smin, smax int) (int, left_bound int) {
+// Returns the highest suffix pointer to a sequence using binary search and deferred detection of equality for speed.
+// Also returns a leftmost bound for the sequence which can be used to constrain the minimum search.
+func (corpus *Corpus) binarySearchMax(seq []int, smin, smax int) (int, left_bound int) {
 	left_bound = smin
 	for smax > smin {
 		// Compare the ngram found at the search location with the desired ngram. 
 		smid := ((smin + smax) / 2) + 1
-		cmp := SeqCmpLimited(corpus.sfx[smid], seq, len(seq))
+		cmp := SeqCmpLimited(corpus.seq[corpus.sfx[smid]:], seq, len(seq))
 		// Update the right bound.
 		if cmp == -1 && smid > left_bound {
 			left_bound = smid
 		}
-		// Update the search.
+		// Update the search range.
 		if cmp == 1 {
 			smax = smid - 1
 		} else {
 			smin = smid
 		}
 	}
-	if (smax == smin) && SeqCmpLimited(seq, corpus.sfx[smin], len(seq)) == 0 {
+	if (smax == smin) && SeqCmpLimited(seq, corpus.seq[corpus.sfx[smin]:], len(seq)) == 0 {
 		return smin, left_bound
 	}
 	return -1, -1
@@ -125,8 +139,9 @@ func (corpus *Corpus) Corpus() (seq []int) {
 
 func (corpus *Corpus) Ngrams(order int) (ngrams [][]int) {
 	for spos := 0; spos < len(corpus.sfx); spos++ {
-		if (len(corpus.sfx[spos]) >= order) && ((len(ngrams) == 0) || SeqCmpLimited(ngrams[len(ngrams)-1], corpus.sfx[spos], order) != 0) {
-			ngrams = append(ngrams, corpus.sfx[spos][:order])
+		corpus_slice := corpus.seq[corpus.sfx[spos]:]
+		if (len(corpus_slice) >= order) && (len(ngrams) == 0 || SeqCmpLimited(ngrams[len(ngrams)-1], corpus_slice, order) != 0) {
+			ngrams = append(ngrams, corpus_slice[:order])
 		}
 	}
 	return
@@ -134,25 +149,29 @@ func (corpus *Corpus) Ngrams(order int) (ngrams [][]int) {
 
 // Frequency and probability methods.
 
+// Returns the number of times a sequence occurs in the corpus.
 func (corpus *Corpus) Frequency(seq []int) int {
-	slo, shi := corpus.Search(seq)
+	slo, shi := corpus.SuffixSearch(seq)
 	if slo == -1 {
 		return 0
 	}
 	return (shi - slo) + 1
 }
 
+// Returns the probability of a sequence in the corpus.
 func (corpus *Corpus) Probability(seq []int) float64 {
 	f := corpus.Frequency(seq)
 	return float64(f) / float64(len(corpus.seq)-(len(seq)-1))
 }
 
+// Returns the P(seq2 | seq1) in the corpus.
 func (corpus *Corpus) ProbabilityTransition(seq1, seq2 []int) float64 {
 	return float64(corpus.Frequency(SeqJoin(seq1, seq2))) / float64(corpus.Frequency(seq1))
 }
 
+// Returns the probability of walking through a sequence using the corpus as training data. Useful for bigram language modeling.
 func (corpus *Corpus) ProbabilityTransitions(seq []int, predictor_length int) (probs []float64) {
-	// 
+	// Iterate through the sequence.
 	for pos := 0; pos < len(seq)-predictor_length-1; pos++ {
 		// Assign conditioning and outcome elements.
 		cond := seq[pos : pos+predictor_length]
@@ -186,6 +205,6 @@ func CorpusFromFile(filename string, lowerCase bool) (corpus *Corpus) {
 		corpus.seq = append(corpus.seq, corpus.voc[token])
 	}
 	// Compute the suffix array.
-	corpus.SetSuffixArray()
+	corpus.sfx = corpus.SuffixArray()
 	return
 }

@@ -1,15 +1,5 @@
 package corpustools
 
-func SeqJoin(seq1, seq2 []int) (joined []int) {
-	for i := 0; i < len(seq1); i++ {
-		joined = append(joined, seq1[i])
-	}
-	for i := 0; i < len(seq2); i++ {
-		joined = append(joined, seq2[i])
-	}
-	return
-}
-
 // Define the sort interface for a list of sequences.
 type Seqs [][]int
 
@@ -26,6 +16,18 @@ func (seqs Seqs) Less(i, j int) bool {
 		return true
 	}
 	return false
+}
+
+// Various utility functions related to sequences.
+
+func SeqJoin(seq1, seq2 []int) (joined []int) {
+	for i := 0; i < len(seq1); i++ {
+		joined = append(joined, seq1[i])
+	}
+	for i := 0; i < len(seq2); i++ {
+		joined = append(joined, seq2[i])
+	}
+	return
 }
 
 func SeqCmp(seq1, seq2 []int) int {

@@ -23,7 +23,7 @@ func TestBasics(t *testing.T) {
 	}
 	// i + 1th suffix ngram should be >= ith suffix ngram.
 	for spos := 0; spos < len(corpus.sfx)-1; spos++ {
-		if SeqCmp(corpus.sfx[spos], corpus.sfx[spos+1]) == 1 {
+		if SeqCmp(corpus.seq[corpus.sfx[spos]:], corpus.seq[corpus.sfx[spos+1]:]) == 1 {
 			t.Errorf("Suffix ordering error detected at positions %d and %d!\n", spos, spos+1)
 		}
 	}
@@ -34,8 +34,8 @@ func TestBasics(t *testing.T) {
 	}
 	// Check that suffix indices returned by fast search matches those returned by slow search.
 	for _, unigram := range unigrams {
-		slo_slow, shi_slow := corpus.SearchSlow(unigram)
-		slo_fast, shi_fast := corpus.Search(unigram)
+		slo_slow, shi_slow := corpus.SlowSearch(unigram)
+		slo_fast, shi_fast := corpus.SuffixSearch(unigram)
 		if (slo_slow != slo_fast) || (shi_slow != shi_fast) {
 			t.Errorf("Error in finding suffix indices! %v: (%d, %d) vs. (%d, %d).\n", unigram, slo_slow, shi_slow, slo_fast, shi_fast)
 		}
