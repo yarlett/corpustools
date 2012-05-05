@@ -47,6 +47,16 @@ func (corpus *Corpus) SearchSlow(seq []int) (slo, shi int) {
 	return
 }
 
+// Returns the corpus indices where a given sequence occurs.
+func (corpus *Corpus) Indices(seq []int) (indices []int) {
+	for cpos := 0; cpos < len(corpus.seq) - (len(seq) - 1); cpos++ {
+		if SeqCmpLimited(seq, corpus.seq[cpos:], len(seq)) == 0 {
+			indices = append(indices, cpos)	
+		}
+	}
+	return
+}
+
 // Binary search over suffix array to find suffix range corresponding to a specified ngram.
 func (corpus *Corpus) Search(seq []int) (int, int) {
 	slo, right_bound := corpus.BinarySearchLeftmost(seq, 0, len(corpus.sfx)-1)

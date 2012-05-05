@@ -1,25 +1,67 @@
 package corpustools
 
-// import (
-// 	"fmt"
-// 	"math"
-// )
+import (
+	"fmt"
+	"math"
+)
 
-// func (corpus *Corpus) DescriptionLengthDelta(ngram []int) float64 {
+func (corpus *Corpus) DescriptionLengthDelta(seq[] int) float64 {
+	// Get cost of internal transitions through sequence.
+	internal_cost := 0.0
+	for i := 0; i < len(seq) - 1; i++ {
+		internal_cost += corpus.TransitionCost(seq[i : i+1], seq[i+1: i+2])
+	}
+	// Get the corpus indices at which the sequence occurs.
+	indices := corpus.Indices(seq)
+	// Iterate through the indices and measure the transition length without and with the sequence in the lexicon.
+	l0, l1 := 0.0, 0.0
+	T := make(map[string]bool, 0)
+	for _, cpos := range indices {
+		if cpos > 0 && cpos < len(corpus.seq) - len(seq) {
+			// Identify the items occurring before and after the sequence of interest.
+			before := corpus.seq[cpos-1 : cpos]
+			after := corpus.seq[cpos+len(seq) : cpos+len(seq)+1]
+			// Add the transition cost without the sequence in the lexicon.
+			l0 += corpus.TransitionCost(before, seq[:1])
+			l0 += internal_cost
+			l0 += corpus.TransitionCost(seq[len(seq)-1:], after)
+			// Add the transition cost with the sequence in the lexicon.
+			l1 += corpus.TransitionCost(before, seq)
+			l1 += corpus.TransitionCost(seq, after)
+			// Update the count of the total number of transitions the posited sequence is involved in.
+			transition_key := fmt.Sprintf("%v --> %v", before, seq)
+			T[transition_key] = true
+			transition_key = fmt.Sprintf("%v --> %v", seq, after)
+			T[transition_key] = true
+		}
+	}
+	transition_table_cost := float64(len(T) * (len(seq) + 2)) * 16.0
+	//fmt.Printf("Coding advantage = %.2f, table cost = %.2f\n", l0 - l1, transition_table_cost)
+	return (l0 - l1) - transition_table_cost
+}
+
+
+
+func (corpus *Corpus) TransitionCost(seq1, seq2 []int) float64 {
+	return -math.Log2(corpus.ProbabilityTransition(seq1, seq2))
+}
+
+
+// func (corpus *Corpus) DescriptionLengthDelta(seq []int) float64 {
 // 	// Maps to keep track of the number of distinct preceding and succeeding elements.
 // 	P := make(map[string]int, 0)
 // 	S := make(map[string]int, 0)
 // 	// Description length of transitions internal to the ngram.
-// 	length_internal := 0.0
-// 	for i := 0; i < len(ngram)-1; i++ {
-// 		length_internal -= math.Log(corpus.ConditionalProbability(ngram[i:i+1], ngram[i+1:i+2]))
-// 	}
+// 	tprobs := corpus.ProbabilityTransitions(seq, 1)[1: ]
+// 	length_internal, _ = SummarizeProbabilities(tprobs)
 // 	// Initialize the length of encoding the data.
 // 	length_base := 0.0
 // 	length_with := 0.0
-// 	// Iterate through every occurrence of the ngram in question.
-// 	slo, shi := corpus.Search(ngram)
+// 	// Iterate through every occurrence of the sequence in question.
+// 	slo, shi := corpus.Search(seq)
 // 	for six := slo; six <= shi; six++ {
+
+
 // 		cix := corpus.sfx[six]
 // 		if (cix > 0) && (cix <= len(corpus.seq)-len(ngram)) {
 // 			// Identify the preceding and succeeding elements.
