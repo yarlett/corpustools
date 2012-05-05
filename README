@@ -1,4 +1,4 @@
-corpustools is a Go library which provides statistical natural language processing functionality on a corpus or words / characters / whatever represented as a sequence of integers. It is intended to be fairly lightweight and fast, and to operate on corpora which can ne held in RAM (of the order of hundreds of millions of tokens). With this in mind many of its operations are based on a suffix array index into corpora.
+corpustools is a Go library which provides statistical natural language processing functionality on a corpus or words / characters / whatever, represented internally as a sequence of integers. It is intended to be fairly lightweight and fast, and to operate on corpora which can be held in RAM (of the order of hundreds of millions, or the low billions, of tokens). With this in mind many of its operations are based on a suffix array index into corpora.
 
 Installation instructions
 =========================
@@ -25,16 +25,14 @@ When the Corpus object is created, a suffix array for the corpus is also created
 	corpus: [5, 4, 3, 2, 1]
 	suffix: [4, 3, 2, 1, 0]
 
-We can see that suffix[0] points to position 4 in the corpus, which corresponds to the substring [1]. suffix[1] points to position 3 in the corpus, which corresponds to the substring [2, 1] > [1].
+We can see that suffix[0] points to position 4 in the corpus, which corresponds to the substring [1]. suffix[1] points to position 3 in the corpus, which corresponds to the substring [2, 1] > [1], and so on.
 
-Although creating a suffix array doubles the amount of memory required by the Corpus object, it allows much faster searching of the corpus. A naive search algorithm, for example, in order to find the frequency of the substring [1, 2, 3] in the corpus will take O(N) time, whereas a binary search over the suffix array will take only O(log(N)) time.
+Although creating a suffix array doubles the amount of memory required by the Corpus object, it allows much faster searching of the corpus. A naive search algorithm in order to find the frequency of the substring [1, 2, 3] in the corpus, for example, will take O(N) time, whereas a binary search over the suffix array takes only O(log(N)) time.
 
 Usage
 =====
 
-Once a corpus has been created, it is relatively easy to use.
-
-For example, in order to find the locations at which a given sequence is located:
+Once a corpus has been created, it is relatively easy to use. For example, in order to find the locations at which a given sequence is located:
 
 	indices := corpus.Find(int[]{1, 2, 3})
 
@@ -42,7 +40,7 @@ In order to compute the frequency of a specified sequence:
 
 	f := corpus.Frequency(int[]{1, 2, 3})
 
-And to generate the set of all trigrams in the corpus:
+And to generate the set of all unique, ordered trigrams in the corpus:
 
 	trigrams := corpus.Ngrams(3)
 
