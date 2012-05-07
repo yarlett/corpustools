@@ -59,7 +59,7 @@ func (corpus *Corpus) SuffixSearch(seq []int) (int, int) {
 }
 
 // Slow linear search over corpus. Only to be used for testing.
-func (corpus *Corpus) SlowSearch(seq []int) (slo, shi int) {
+func (corpus *Corpus) slowSearch(seq []int) (slo, shi int) {
 	slo = len(corpus.sfx) - 1
 	shi = 0
 	for spos := 0; spos < len(corpus.sfx); spos++ {
@@ -74,10 +74,6 @@ func (corpus *Corpus) SlowSearch(seq []int) (slo, shi int) {
 	}
 	return
 }
-
-//
-// Utility searching methods (not exported).
-//
 
 // Returns the lowest suffix pointer to a sequence using binary search and deferred detection of equality for speed.
 // Also returns a rightmost bound for the sequence which can be used to constrain the maximum search.
@@ -129,6 +125,10 @@ func (corpus *Corpus) binarySearchMax(seq []int, smin, smax int) (int, left_boun
 	return -1, -1
 }
 
+//
+// Utility methods.
+//
+
 // Returns a copy of the corpus.
 func (corpus *Corpus) Corpus() (seq []int) {
 	for cpos := 0; cpos < len(corpus.seq); cpos++ {
@@ -136,6 +136,25 @@ func (corpus *Corpus) Corpus() (seq []int) {
 	}
 	return
 }
+
+// Converts a corpus sequence back into its input form.
+func (corpus *Corpus) ToString(seq []int) (strings []string) {
+	for pos := 0; pos < len(seq); pos++ {
+		str := "**UNKNOWN**"
+		for type_str, type_int := range corpus.voc {
+			if type_int == seq[pos] {
+				str = type_str
+				break
+			}
+		}
+		strings = append(strings, str)
+	}
+	return
+}
+
+//
+// Ngram methods.
+//
 
 func (corpus *Corpus) Ngrams(order int) (ngrams [][]int) {
 	for spos := 0; spos < len(corpus.sfx); spos++ {
@@ -147,7 +166,9 @@ func (corpus *Corpus) Ngrams(order int) (ngrams [][]int) {
 	return
 }
 
+//
 // Frequency and probability methods.
+//
 
 // Returns the number of times a sequence occurs in the corpus.
 func (corpus *Corpus) Frequency(seq []int) int {
@@ -185,6 +206,49 @@ func (corpus *Corpus) ProbabilityTransitions(seq []int, predictor_length int) (p
 	}
 	return
 }
+
+//
+// Nearest neighbor methods.
+//
+
+func (corpus *Corpus) NearestNeighbors(seq []int, seqs [][]int) (results Results) {
+	// Get the co-occurrence vector for the sequence.
+	cooc1 := corpus.CoocVector(seq)
+	mag1 := cooc1.Mag()
+	// Compute the similarity with the other sequences in the list.
+	for _, sseq := range seqs {
+		cooc2 := corpus.CoocVector(sseq)
+		mag2 := cooc2.Mag()
+		results = append(results, Result{Seq: sseq, Val: cooc1.Prod(cooc2) / (mag1 * mag2)})
+	}
+	// Return the sorted results.
+	sort.Sort(results)
+	return
+}
+
+// Returns a co-occurrence vector for a sequence.
+func (corpus *Corpus) CoocVector(seq []int) (cooc *Cooc) {
+	// Get suffix range where the sequence occurs.
+	slo, shi := corpus.SuffixSearch(seq)
+	// Get the frequency counts.
+	cooc = &Cooc{seq: seq, dat: make(map[int]float64)}
+	for spos := slo; spos <= shi; spos++ {
+		cpos := corpus.sfx[spos]
+		// Increment the count of the type occurring before the sequence.
+		if cpos > 0 {
+			cooc.Inc(corpus.seq[cpos-1])
+		}
+		// Increment the count of the type occurring after the sequence.
+		if cpos < len(corpus.seq)-1 {
+			cooc.Inc(corpus.seq[cpos+1])
+		}
+	}
+	return
+}
+
+//
+// Function to create a corpus.
+//
 
 // Creates and returns a corpus from a text file.
 func CorpusFromFile(filename string, lowerCase bool) (corpus *Corpus) {

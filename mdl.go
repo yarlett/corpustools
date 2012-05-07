@@ -35,9 +35,8 @@ func (corpus *Corpus) DescriptionLengthDelta(seq []int) float64 {
 			T[transition_key] = true
 		}
 	}
-	transition_table_cost := float64(len(T)*(len(seq)+2)) * 16.0
-	//fmt.Printf("Coding advantage = %.2f, table cost = %.2f\n", l0 - l1, transition_table_cost)
-	return (l0 - l1) - transition_table_cost
+	//transition_table_cost := float64(len(T)*(len(seq)+2)) * 16.0
+	return (l0 - l1) // - transition_table_cost
 }
 
 func (corpus *Corpus) TransitionCost(seq1, seq2 []int) float64 {

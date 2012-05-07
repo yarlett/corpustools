@@ -5,6 +5,7 @@ import (
 	"fmt"
 	//"os"
 	//"strings"
+	"sort"
 )
 
 func main() {
@@ -22,7 +23,7 @@ func main() {
 	// corpus := corpustools.CorpusFromFile(corpusfile, lower_case_tokens)
 	// fmt.Println(corpus.Info())
 
-	corpus := corpustools.CorpusFromFile("/Users/dan/github/exponential_manifold_embedding/data/brown.txt", false)
+	corpus := corpustools.CorpusFromFile("/Users/yarlett/Corpora/Brown.txt", true)
 	fmt.Println(corpus.Info())
 
 	// Enumerate all the subsequences we want to explore.
@@ -38,13 +39,20 @@ func main() {
 	fmt.Printf("%d sequences to be explored.\n", len(seqs))
 
 	// Identify the corpus subsequences which minimize the description length of the corpus.
+	dlds := make(corpustools.Results, 0)
 	for i, seq := range seqs {
 		dld := corpus.DescriptionLengthDelta(seq)
-		if dld > 0.0 {
-			fmt.Printf("Sequence %d/%d: %v: description_length_delta = %.3f.\n", i + 1, len(seqs), seq, dld)
-		}
+		dlds = append(dlds, corpustools.Result{Seq: seq, Val: dld})
+		// if dld > 0.0 {
+		// 	fmt.Printf("Sequence %d/%d: %v %v: description_length_delta = %.3f.\n", i + 1, len(seqs), corpus.ToString(seq), seq, dld)
+		// }
 		if i > 0 && i%1000 == 0 {
 			fmt.Printf("  %d seqs processed...\n", i)
 		}
+	}
+	sort.Sort(dlds)
+
+	for i := 0; i < 15; i++ {
+		fmt.Printf("Sequence %d: %v %v: f=%d, description_length_delta = %.3f.\n", i, corpus.ToString(dlds[i].Seq), dlds[i].Seq, corpus.Frequency(dlds[i].Seq), dlds[i].Val)
 	}
 }
