@@ -16,23 +16,35 @@ func (corpus *Corpus) Info() string {
 	return fmt.Sprintf("%d types and %d tokens in the corpus, %d suffixes in the suffix array.\n", len(corpus.voc), len(corpus.seq), len(corpus.sfx))
 }
 
-func (corpus *Corpus) SuffixArray() (suffix_array []int) {
-	// Create the list of suffixes from the corpus.
-	suffixes := make(Seqs, 0)
-	for cpos, _ := range corpus.seq {
-		suffixes = append(suffixes, corpus.seq[cpos:])
+//
+// Suffix array methods.
+//
+
+func (corpus *Corpus) Len() int {
+	return len(corpus.seq)
+}
+
+func (corpus *Corpus) Swap(i, j int) {
+	corpus.sfx[i], corpus.sfx[j] = corpus.sfx[j], corpus.sfx[i]
+}
+
+func (corpus *Corpus) Less(i, j int) bool {
+	if SeqCmp(corpus.seq[corpus.sfx[i]:], corpus.seq[corpus.sfx[j]:]) == -1 {
+		return true
 	}
-	sort.Sort(suffixes)
-	// Convert the ordered suffixes back to integer indices into the corpus.
-	// Can derive corpus position from the length of the suffix slice.
-	for _, seq := range suffixes {
-		suffix_array = append(suffix_array, len(corpus.seq)-len(seq))
+	return false
+}
+
+func (corpus *Corpus) SetSuffixArray() {
+	corpus.sfx = make([]int, len(corpus.seq))
+	for i := 0; i < len(corpus.seq); i++ {
+		corpus.sfx[i] = i
 	}
-	return
+	sort.Sort(corpus)
 }
 
 //
-// Find() method returns list of corpus positions at which a sequence is located.
+// Search methods.
 //
 
 // Returns the corpus indices where a given sequence occurs.
@@ -43,10 +55,6 @@ func (corpus *Corpus) Find(seq []int) (indices []int) {
 	}
 	return
 }
-
-//
-// Search methods return the range of suffix positions at which a sequence is located.
-//
 
 // Binary search over suffix array to find suffix range where a sequence is located.
 func (corpus *Corpus) SuffixSearch(seq []int) (int, int) {
@@ -269,6 +277,7 @@ func CorpusFromFile(filename string, lowerCase bool) (corpus *Corpus) {
 		corpus.seq = append(corpus.seq, corpus.voc[token])
 	}
 	// Compute the suffix array.
-	corpus.sfx = corpus.SuffixArray()
+	corpus.SetSuffixArray()
+	//corpus.sfx = corpus.SuffixArray()
 	return
 }

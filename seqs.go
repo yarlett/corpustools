@@ -1,23 +1,5 @@
 package corpustools
 
-// Define the sort interface for a list of sequences.
-type Seqs [][]int
-
-func (seqs Seqs) Len() int {
-	return len(seqs)
-}
-
-func (seqs Seqs) Swap(i, j int) {
-	seqs[i], seqs[j] = seqs[j], seqs[i]
-}
-
-func (seqs Seqs) Less(i, j int) bool {
-	if SeqCmp(seqs[i], seqs[j]) == -1 {
-		return true
-	}
-	return false
-}
-
 // Various utility functions related to sequences.
 
 func SeqJoin(seq1, seq2 []int) (joined []int) {
