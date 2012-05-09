@@ -69,3 +69,13 @@ func BenchmarkFreqs(b *testing.B) {
 		}
 	}
 }
+
+// Benchmark for calculating the nearest neighbors of a sequence based on distributional information.
+func BenchmarkNNs(b *testing.B) {
+	b.StopTimer()
+	unigrams := corpus.Ngrams(1)
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		_ = corpus.NearestNeighbors([]int{0}, unigrams)
+	}
+}

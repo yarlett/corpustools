@@ -2,6 +2,7 @@ package corpustools
 
 import (
 	"fmt"
+	"runtime"
 	"sort"
 )
 
@@ -13,11 +14,11 @@ type Corpus struct {
 }
 
 func (corpus *Corpus) Info() string {
-	return fmt.Sprintf("%d types and %d tokens in the corpus, %d suffixes in the suffix array.\n", len(corpus.voc), len(corpus.seq), len(corpus.sfx))
+	return fmt.Sprintf("%d types and %d tokens in the corpus, %d suffixes in the suffix array.", len(corpus.voc), len(corpus.seq), len(corpus.sfx))
 }
 
 //
-// Suffix array methods.
+// Sort interface methods.
 //
 
 func (corpus *Corpus) Len() int {
@@ -35,6 +36,10 @@ func (corpus *Corpus) Less(i, j int) bool {
 	return false
 }
 
+//
+// Suffix array.
+//
+
 func (corpus *Corpus) SetSuffixArray() {
 	corpus.sfx = make([]int, len(corpus.seq))
 	for i := 0; i < len(corpus.seq); i++ {
@@ -50,8 +55,11 @@ func (corpus *Corpus) SetSuffixArray() {
 // Returns the corpus indices where a given sequence occurs.
 func (corpus *Corpus) Find(seq []int) (indices []int) {
 	slo, shi := corpus.SuffixSearch(seq)
+	indices = make([]int, shi-slo+1)
+	i := 0
 	for spos := slo; spos <= shi; spos++ {
-		indices = append(indices, corpus.sfx[spos])
+		indices[i] = corpus.sfx[spos]
+		i++
 	}
 	return
 }
@@ -66,7 +74,7 @@ func (corpus *Corpus) SuffixSearch(seq []int) (int, int) {
 	return slo, shi
 }
 
-// Slow linear search over corpus. Only to be used for testing.
+// Slow linear search over corpus. Only useful for testing so not exported.
 func (corpus *Corpus) slowSearch(seq []int) (slo, shi int) {
 	slo = len(corpus.sfx) - 1
 	shi = 0
@@ -220,18 +228,46 @@ func (corpus *Corpus) ProbabilityTransitions(seq []int, predictor_length int) (p
 //
 
 func (corpus *Corpus) NearestNeighbors(seq []int, seqs [][]int) (results Results) {
-	// Get the co-occurrence vector for the sequence.
-	cooc1 := corpus.CoocVector(seq)
-	mag1 := cooc1.Mag()
-	// Compute the similarity with the other sequences in the list.
-	for _, sseq := range seqs {
-		cooc2 := corpus.CoocVector(sseq)
-		mag2 := cooc2.Mag()
-		results = append(results, Result{Seq: sseq, Val: cooc1.Prod(cooc2) / (mag1 * mag2)})
+	// Set the maximum number of threads to be used to the number of CPU cores available.
+	//numprocs := runtime.NumCPU()
+	numprocs := 32
+	runtime.GOMAXPROCS(numprocs)
+	// Precompute the base vector and magnitude.
+	base_vector := corpus.CoocVector(seq)
+	base_mag := base_vector.Mag()
+	// Initialize the channels goroutines will use to send results back.
+	channel := make(chan Result, len(seqs))
+	// Start the goroutines.
+	block_size := len(seqs) / numprocs
+	for i := 0; i < numprocs; i++ {
+		// Set indices for work.
+		lo := i * block_size
+		hi := (i+1) * block_size
+		if i == numprocs - 1 {
+			hi = len(seqs)
+		}
+		// Trigger goroutine.
+		go corpus.NearestNeighborWorker(base_vector, base_mag, seqs[lo : hi], channel)
+	}
+	// Drain the channels of results.
+	results = make([]Result, 0)
+	for ; len(results) < len(seqs); {
+		result, _ := <-channel
+		results = append(results, result)
 	}
 	// Return the sorted results.
 	sort.Sort(results)
 	return
+}
+
+func (corpus *Corpus) NearestNeighborWorker(base_vector *Cooc, base_mag float64, seqs [][]int, results_channel chan Result) {
+	// Compute the similarity between the base vector and the sequences in the list.
+	for _, sseq := range seqs {
+		cooc := corpus.CoocVector(sseq)
+		mag := cooc.Mag()
+		result := Result{Seq: sseq, Val: base_vector.Prod(cooc) / (base_mag * mag)}
+		results_channel<-result
+	}
 }
 
 // Returns a co-occurrence vector for a sequence.
@@ -255,7 +291,7 @@ func (corpus *Corpus) CoocVector(seq []int) (cooc *Cooc) {
 }
 
 //
-// Function to create a corpus.
+// Functions to create a corpus.
 //
 
 // Creates and returns a corpus from a text file.

@@ -8,7 +8,7 @@ import (
 
 func main() {
 	// Create a corpus object from the test corpus.
-	corpus := corpustools.CorpusFromFile("/Users/yarlett/Corpora/Brown.txt", true)
+	corpus := corpustools.CorpusFromFile("/Users/dan/github/exponential_manifold_embedding/data/brown.txt", true)
 	fmt.Println(corpus.Info())
 
 	// Get the list of comparison terms.
@@ -16,7 +16,7 @@ func main() {
 	seqs := make([][]int, 0)
 	for order := 1; order <= 3; order++ {
 		for _, ngram := range corpus.Ngrams(order) {
-			if corpus.Frequency(ngram) >= 5 {
+			if corpus.Frequency(ngram) >= 30 {
 				seqs = append(seqs, ngram)
 			}
 		}
@@ -26,10 +26,12 @@ func main() {
 
 	// Compute and report the nearest neighbors.
 	t1 = time.Now()
-	nns := corpus.NearestNeighbors([]int{0}, seqs)
-	t2 = time.Now()
-	for i := 0; i < 15; i++ {
-		fmt.Printf("Sequence %d: %v %v: f=%d, description_length_delta = %.3f.\n", i, corpus.ToString(nns[i].Seq), nns[i].Seq, corpus.Frequency(nns[i].Seq), nns[i].Val)
+	for i := 0; i < 100; i++ {
+		_ = corpus.NearestNeighbors(seqs[i], seqs)
 	}
+	t2 = time.Now()
+	// for i := 0; i < 15; i++ {
+	// 	fmt.Printf("Sequence %d: %v %v: f=%d, description_length_delta = %.3f.\n", i, corpus.ToString(nns[i].Seq), nns[i].Seq, corpus.Frequency(nns[i].Seq), nns[i].Val)
+	// }
 	fmt.Printf("Took %v.\n", t2.Sub(t1))
 }
