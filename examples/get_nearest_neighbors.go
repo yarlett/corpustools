@@ -8,7 +8,7 @@ import (
 
 func main() {
 	// Create a corpus object from the test corpus.
-	corpus := corpustools.CorpusFromFile("/Users/dan/github/exponential_manifold_embedding/data/brown.txt", true)
+	corpus := corpustools.CorpusFromFile("/Users/yarlett/Corpora/Brown.txt", true)
 	fmt.Println(corpus.Info())
 
 	// Get the list of comparison terms.

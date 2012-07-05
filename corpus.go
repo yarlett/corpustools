@@ -14,7 +14,7 @@ type Corpus struct {
 }
 
 func (corpus *Corpus) Info() string {
-	return fmt.Sprintf("%d types and %d tokens in the corpus, %d suffixes in the suffix array.", len(corpus.voc), len(corpus.seq), len(corpus.sfx))
+	return fmt.Sprintf("%d types and %d tokens in the corpus; %d suffixes in the suffix array.", len(corpus.voc), len(corpus.seq), len(corpus.sfx))
 }
 
 //
@@ -229,8 +229,7 @@ func (corpus *Corpus) ProbabilityTransitions(seq []int, predictor_length int) (p
 
 func (corpus *Corpus) NearestNeighbors(seq []int, seqs [][]int) (results Results) {
 	// Set the maximum number of threads to be used to the number of CPU cores available.
-	//numprocs := runtime.NumCPU()
-	numprocs := 32
+	numprocs := runtime.NumCPU()
 	runtime.GOMAXPROCS(numprocs)
 	// Precompute the base vector and magnitude.
 	base_vector := corpus.CoocVector(seq)
@@ -238,20 +237,11 @@ func (corpus *Corpus) NearestNeighbors(seq []int, seqs [][]int) (results Results
 	// Initialize the channels goroutines will use to send results back.
 	channel := make(chan Result, len(seqs))
 	// Start the goroutines.
-	block_size := len(seqs) / numprocs
-	for i := 0; i < numprocs; i++ {
-		// Set indices for work.
-		lo := i * block_size
-		hi := (i+1) * block_size
-		if i == numprocs - 1 {
-			hi = len(seqs)
-		}
-		// Trigger goroutine.
-		go corpus.NearestNeighborWorker(base_vector, base_mag, seqs[lo : hi], channel)
+	for i := 0; i < len(seqs); i++ {
+		go corpus.NearestNeighborWorker(base_vector, base_mag, seqs[i], channel)
 	}
 	// Drain the channels of results.
-	results = make([]Result, 0)
-	for ; len(results) < len(seqs); {
+	for i := 0; i < len(seqs); i++ {
 		result, _ := <-channel
 		results = append(results, result)
 	}
@@ -260,14 +250,10 @@ func (corpus *Corpus) NearestNeighbors(seq []int, seqs [][]int) (results Results
 	return
 }
 
-func (corpus *Corpus) NearestNeighborWorker(base_vector *Cooc, base_mag float64, seqs [][]int, results_channel chan Result) {
-	// Compute the similarity between the base vector and the sequences in the list.
-	for _, sseq := range seqs {
-		cooc := corpus.CoocVector(sseq)
-		mag := cooc.Mag()
-		result := Result{Seq: sseq, Val: base_vector.Prod(cooc) / (base_mag * mag)}
-		results_channel<-result
-	}
+func (corpus *Corpus) NearestNeighborWorker(base_vector *Cooc, base_mag float64, seq []int, results_channel chan Result) {
+	// Compute the similarity between the base vector and a specified sequence.
+	cooc := corpus.CoocVector(seq)
+	results_channel<-Result{Seq: seq, Val: base_vector.Prod(cooc) / (base_mag * cooc.Mag())}
 }
 
 // Returns a co-occurrence vector for a sequence.
