@@ -253,7 +253,7 @@ func (corpus *Corpus) NearestNeighbors(seq []int, seqs [][]int) (results Results
 func (corpus *Corpus) NearestNeighborWorker(base_vector *Cooc, base_mag float64, seq []int, results_channel chan Result) {
 	// Compute the similarity between the base vector and a specified sequence.
 	cooc := corpus.CoocVector(seq)
-	results_channel<-Result{Seq: seq, Val: base_vector.Prod(cooc) / (base_mag * cooc.Mag())}
+	results_channel <- Result{Seq: seq, Val: base_vector.Prod(cooc) / (base_mag * cooc.Mag())}
 }
 
 // Returns a co-occurrence vector for a sequence.
