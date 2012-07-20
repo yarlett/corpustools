@@ -281,11 +281,11 @@ func (corpus *Corpus) CoocVector(seq []int) (cooc *Cooc) {
 //
 
 // Creates and returns a corpus from a text file.
-func CorpusFromFile(filename string, lowerCase bool) (corpus *Corpus) {
+func CorpusFromFile(filename string, lowerCase bool, returnChars bool) (corpus *Corpus) {
 	// Initialize the corpus.
 	corpus = &Corpus{voc: make(map[string]int), seq: make([]int, 0), sfx: nil}
 	// Get string array from tokenizer.
-	tokens := TokensFromFile(filename, lowerCase)
+	tokens := TokensFromFile(filename, lowerCase, returnChars)
 	// Iterate through the string tokens.
 	type_ctr := 0
 	for _, token := range tokens {

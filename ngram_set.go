@@ -27,3 +27,17 @@ func (ngs *NgramSet) Remove(ngram []int) {
 	delete(ngs.ngrams, ngs.Key(ngram))
 	return
 }
+
+func (ngs *NgramSet) Size() (size int) {
+	size = len(ngs.ngrams)
+	return
+}
+
+func (ngs *NgramSet) LongestNgram() (longest int) {
+	for _, ngram_seq := range ngs.ngrams {
+		if len(ngram_seq) > longest {
+			longest = len(ngram_seq)
+		}
+	}
+	return
+}
