@@ -300,6 +300,5 @@ func CorpusFromFile(filename string, lowerCase bool, returnChars bool) (corpus *
 	}
 	// Compute the suffix array.
 	corpus.SetSuffixArray()
-	//corpus.sfx = corpus.SuffixArray()
 	return
 }

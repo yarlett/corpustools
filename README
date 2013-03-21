@@ -21,10 +21,10 @@ Much of the core functionality of the library is available through the Corpus ob
 To create a corpus object from a text file:
 
 	import "corpustools"
-	lower_case_tokens := true
-	corpus := corpustools.CorpusFromFile("myfile.txt", lower_case_tokens)
+	lowerCase, returnChars := true, false
+	corpus := corpustools.CorpusFromFile("myfile.txt", lowerCase, returnChars)
 
-which will tokenize myfile.txt into lower-case words, assigning each distinct token a unique integer key, and representing the sequence of tokens internally as an array of integers (the Corpus object also encapsulates the mapping from tokens to integers so that the internal representation can be translated back into its original format).
+which will tokenize myfile.txt into lower-case words (not characters), assigning each distinct token a unique integer key, and representing the sequence of tokens internally as an array of integers (the Corpus object also encapsulates the mapping from tokens to integers so that the internal representation can be translated back into its original format).
 
 When the Corpus object is created, a suffix array for the corpus is also created. The suffix array consists of integer indexes into the corpus such that traversing the suffix array in order and following its pointers results in an ordered enumeration of all substrings of the corpus. For example, here is an example corpus and its corresponding suffix array:
 

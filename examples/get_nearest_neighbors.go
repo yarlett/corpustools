@@ -1,14 +1,14 @@
 package main
 
 import (
-	"corpustools"
 	"fmt"
+	"github.com/yarlett/corpustools"
 	"time"
 )
 
 func main() {
 	// Create a corpus object from the test corpus.
-	corpus := corpustools.CorpusFromFile("/Users/yarlett/Corpora/Brown.txt", true)
+	corpus := corpustools.CorpusFromFile("../data/test_corpus.txt", true, false)
 	fmt.Println(corpus.Info())
 
 	// Get the list of comparison terms.

@@ -13,7 +13,7 @@ var (
 
 // Load a corpus on which to perform testing and benchmarking.
 var path, _ = os.Getwd()
-var corpus = CorpusFromFile(strings.Join([]string{path, "/data/test_corpus.txt"}, ""), true)
+var corpus = CorpusFromFile(strings.Join([]string{path, "/data/test_corpus.txt"}, ""), true, false)
 
 // Length of corpus and suffix array should be the same.
 func TestBasics(t *testing.T) {
@@ -45,7 +45,7 @@ func TestBasics(t *testing.T) {
 // Benchmark for making a corpus from a text file.
 func BenchmarkCorpus(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		_ = CorpusFromFile(strings.Join([]string{path, "/data/test_corpus.txt"}, ""), true)
+		_ = CorpusFromFile(strings.Join([]string{path, "/data/test_corpus.txt"}, ""), true, false)
 	}
 }
 

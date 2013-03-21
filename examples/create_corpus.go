@@ -1,8 +1,8 @@
 package main
 
 import (
-	"corpustools"
 	"fmt"
+	"github.com/yarlett/corpustools"
 	"os"
 	"strings"
 )
@@ -18,7 +18,7 @@ func main() {
 	corpusfile := strings.Join(path_parts, "/")
 
 	// Create a corpus object from the test corpus.
-	lower_case_tokens := true
-	corpus := corpustools.CorpusFromFile(corpusfile, lower_case_tokens)
+	lowerCase, returnChars := true, false
+	corpus := corpustools.CorpusFromFile(corpusfile, lowerCase, returnChars)
 	fmt.Println(corpus.Info())
 }

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"corpustools"
 	"fmt"
+	"github.com/yarlett/corpustools"
 	"log"
 	"os"
 	"time"
@@ -10,7 +10,7 @@ import (
 
 func main() {
 	// Load the corpus as a lower-case sequence of characters.
-	corpus := corpustools.CorpusFromFile("/Users/dan/github/exponential_manifold_embedding/data/brown.txt", true, true)
+	corpus := corpustools.CorpusFromFile("../data/test_corpus.txt", true, true)
 	//corpus := corpustools.CorpusFromFile("/Users/yarlett/Corpora/Brown.txt", true)
 	fmt.Println(corpus.Info())
 
