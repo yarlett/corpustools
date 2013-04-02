@@ -2,6 +2,7 @@ package corpustools
 
 import (
 	"fmt"
+	"math"
 	"runtime"
 	"sort"
 )
@@ -221,6 +222,19 @@ func (corpus *Corpus) ProbabilityTransitions(seq []int, predictor_length int) (p
 		probs = append(probs, corpus.ProbabilityTransition(cond, outcome))
 	}
 	return
+}
+
+//
+// Collocation methods.
+//
+
+func (corpus *Corpus) MutualInformation(seq []int) (I float64) {
+	// Returns the mutual information, in bits, conveyed by the items in a sequence.
+	I = math.Log2(corpus.Probability(seq))
+	for i := 0; i < len(seq); i++ {
+		I -= math.Log2(corpus.Probability(seq[i:i+1]))
+	}
+	return I
 }
 
 //
