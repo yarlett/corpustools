@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"regexp"
 	"strings"
 	"unicode"
 )
@@ -30,7 +31,7 @@ func TokensFromFile(filename string, lowerCase bool, returnChars bool) (tokens [
 			log.Fatal(err)
 		}
 		if isprefix {
-			log.Fatal("line too long for buffered reader")
+			log.Fatal("Line too long for buffered reader.")
 		}
 		// Convert the bytes in the line to nice tokens.
 		tks = TokenizeLine(string(line), lowerCase, returnChars)
@@ -65,8 +66,13 @@ func TokenizeLine(line string, lowerCase bool, returnChars bool) (tokens []strin
 				tokens = append(tokens, "XXX")
 			}
 		}
-		// Or else split line into "words" by splitting on space.
+	// Or else split line into "words" by splitting on space.
 	} else {
+		// Insert spaces around break character, remove repeated spaces, and then split on individual spaces.
+		splitchars, _ := regexp.Compile(`\b`)
+		multiplespaces, _ := regexp.Compile(`  +`)
+		line = splitchars.ReplaceAllString(line, " $1 ")
+		line = multiplespaces.ReplaceAllString(line, " ")
 		tokens = strings.Split(line, " ")
 	}
 	return

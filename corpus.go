@@ -237,6 +237,42 @@ func (corpus *Corpus) MutualInformation(seq []int) (I float64) {
 	return I
 }
 
+// func (corpus *Corpus) CollocationMonteCarlo(seq []int, samples int) float64 {
+// 	var (
+// 		i, f, p, F, N, sample int
+// 	)
+// 	N = corpus.Len()
+
+// 	for sample = 0; sample < samples; sample++ {
+// 		// Assign occurrences of items in sequence to random locations in the corpus.
+// 		positions := make(map[int]int)
+// 		for i = 0; i < len(seq); i++ {
+// 			F = corpus.Frequency(seq[i:i+1])
+// 			for f = 0; f < F; f++ {
+// 				for ; true; {
+// 					p = rand.IntN(N)
+// 					_, found := positions[p]
+// 					if !found {
+// 						positions[p] = seq[i]
+// 						break
+// 					}
+// 				}
+// 			}
+// 		}
+// 		// Get the positions in order.
+
+// 		for p, _ = range positions {
+			
+// 		}
+
+// 		// Count the number of occurrences of the sequence.
+
+
+		
+// 	}
+// }
+
+
 //
 // Nearest neighbor methods.
 //
