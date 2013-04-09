@@ -12,7 +12,7 @@ func main() {
 	var path, _ = os.Getwd()
 	path_parts := strings.Split(path, "/")
 	path_parts = path_parts[: len(path_parts) - 1]
-	for _, part := range []string{"data", "test_corpus.txt"} {
+	for _, part := range []string{"data", "brown.txt"} {
 		path_parts = append(path_parts, part)
 	}
 	corpusfile := strings.Join(path_parts, "/")

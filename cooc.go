@@ -33,7 +33,7 @@ func (cooc *Cooc) Mag() (mag float64) {
 	for _, val := range cooc.dat {
 		mag += val * val
 	}
-	mag = math.Pow(mag, 0.5)
+	mag = math.Sqrt(mag)
 	return
 }
 

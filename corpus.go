@@ -266,12 +266,8 @@ func (corpus *Corpus) MutualInformation(seq []int) (I float64) {
 // 		}
 
 // 		// Count the number of occurrences of the sequence.
-
-
-		
 // 	}
 // }
-
 
 //
 // Nearest neighbor methods.
@@ -296,7 +292,7 @@ func (corpus *Corpus) NearestNeighbors(seq []int, seqs [][]int) (results Results
 		results = append(results, result)
 	}
 	// Return the sorted results.
-	sort.Sort(results)
+	sort.Sort(ResultsReverseSort{results})
 	return
 }
 
@@ -308,6 +304,7 @@ func (corpus *Corpus) NearestNeighborWorker(base_vector *Cooc, base_mag float64,
 
 // Returns a co-occurrence vector for a sequence.
 func (corpus *Corpus) CoocVector(seq []int) (cooc *Cooc) {
+	lseq := len(seq)
 	// Get suffix range where the sequence occurs.
 	slo, shi := corpus.SuffixSearch(seq)
 	// Get the frequency counts.
@@ -316,11 +313,11 @@ func (corpus *Corpus) CoocVector(seq []int) (cooc *Cooc) {
 		cpos := corpus.sfx[spos]
 		// Increment the count of the type occurring before the sequence.
 		if cpos > 0 {
-			cooc.Inc(corpus.seq[cpos-1])
+			cooc.Inc(-corpus.seq[cpos-1])
 		}
 		// Increment the count of the type occurring after the sequence.
-		if cpos < len(corpus.seq)-1 {
-			cooc.Inc(corpus.seq[cpos+1])
+		if cpos < len(corpus.seq)-lseq {
+			cooc.Inc(corpus.seq[cpos+lseq])
 		}
 	}
 	return

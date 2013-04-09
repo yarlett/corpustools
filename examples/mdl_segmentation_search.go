@@ -10,8 +10,7 @@ import (
 
 func main() {
 	// Load the corpus as a lower-case sequence of characters.
-	corpus := corpustools.CorpusFromFile("../data/test_corpus.txt", true, true)
-	//corpus := corpustools.CorpusFromFile("/Users/yarlett/Corpora/Brown.txt", true)
+	corpus := corpustools.CorpusFromFile("../data/brown.txt", true, true)
 	fmt.Println(corpus.Info())
 
 	// Enumerate all the ngrams we want to explore.

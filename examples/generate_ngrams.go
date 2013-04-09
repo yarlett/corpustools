@@ -8,7 +8,7 @@ import (
 
 func main() {
 	// Create a corpus from a text file.
-	corpus := corpustools.CorpusFromFile("../data/test_corpus.txt", true, false)
+	corpus := corpustools.CorpusFromFile("../data/brown.txt", true, false)
 	fmt.Println(corpus.Info())
 
 	// Iterate over various orders and generate the ngrams of this length.
